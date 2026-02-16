@@ -5,10 +5,13 @@ import { generateQuestions, generateSlidesOutline, generateThematicImage, sugges
 import * as htmlToImage from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import pptxgen from 'pptxgenjs';
+import { supabase } from '../services/supabaseClient';
+import { User } from '../types';
 
 interface ToolPageProps {
   toolId: string;
   onBack: () => void;
+  user?: User | null;
 }
 
 interface SlideData {
@@ -16,7 +19,7 @@ interface SlideData {
   content: string;
 }
 
-const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
+const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack, user }) => {
   const [loading, setLoading] = useState(false);
   const [suggestingSkills, setSuggestingSkills] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -93,6 +96,20 @@ const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
     setLpBnccSkills([]);
   }, [lpGrade, lpDiscipline]);
 
+  const saveToSupabase = async (content: string, title: string) => {
+    if (!user?.id) return;
+    try {
+      await supabase.from('materials').insert([{
+        user_id: user.id,
+        tool_id: toolId,
+        title: title,
+        content: content
+      }]);
+    } catch (e) {
+      console.error("Erro ao persistir no Supabase:", e);
+    }
+  };
+
   const handleAutoSuggestSkills = async (target: 'Q' | 'S' | 'LP') => {
     const subject = target === 'Q' ? qSubject : (target === 'S' ? sSubject : lpSubject || 'Planejamento de aulas');
     const grade = target === 'Q' ? qGrade : (target === 'S' ? sGrade : lpGrade);
@@ -166,7 +183,10 @@ const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
         webSearch: qWebSearch,
         fileData: qFile ? { data: qFile.data, mimeType: qFile.mimeType } : null
       });
-      setResult(output || 'Erro na geração.');
+      if (output) {
+        setResult(output);
+        await saveToSupabase(output, `Questionário: ${qSubject}`);
+      }
     } catch (e) { alert("Falha ao gerar conteúdo."); } finally { setLoading(false); }
   };
 
@@ -194,6 +214,7 @@ const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
       if (output) {
         setResult(output);
         setSlides(parseSlides(output));
+        await saveToSupabase(output, `Slides: ${sSubject}`);
       }
       if (sIncludeImages) {
         const imageUrl = await generateThematicImage(sSubject, sDiscipline);
@@ -215,7 +236,10 @@ const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
         days: selectedDays,
         bnccSkills: lpBnccSkills
       });
-      setResult(output);
+      if (output) {
+        setResult(output);
+        await saveToSupabase(output, `Plano de Aula: ${lpSubject}`);
+      }
     } catch (e) { alert("Falha ao gerar plano de aula."); } finally { setLoading(false); }
   };
 
@@ -242,7 +266,6 @@ const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
     if (!resultRef.current) return;
     setLoading(true);
     try {
-      // Ajustamos a escala para garantir que o JPEG não fique distorcido ao imprimir em A4
       const dataUrl = await htmlToImage.toJpeg(resultRef.current, { 
         backgroundColor: '#ffffff', 
         quality: 0.95,
@@ -274,7 +297,6 @@ const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
         }
         pdf.save(`ws-slides-${Date.now()}.pdf`);
       } else {
-        // Lógica de Paginação para Questionários e Planos de Aula (Evita texto espremido)
         const canvas = await htmlToImage.toCanvas(resultRef.current, { backgroundColor: '#ffffff', pixelRatio: 2 });
         const imgData = canvas.toDataURL('image/jpeg', 1.0);
         const pdf = new jsPDF('p', 'mm', 'a4');

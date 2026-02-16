@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import ToolPage from './pages/ToolPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import { supabase } from './services/supabaseClient';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
@@ -13,11 +14,79 @@ const App: React.FC = () => {
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Garantimos que o modo claro seja o padrão
-    document.documentElement.classList.remove('dark');
+    // Verificar sessão ativa ao carregar
+    const checkUser = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        if (session) {
+          await fetchProfile(session.user.id, session.user.email || '');
+        }
+      } catch (e) {
+        console.warn("Supabase não configurado ou erro de conexão:", e);
+        // Não jogamos erro para não travar o carregamento do App
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkUser();
+
+    // Escutar mudanças na auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        await fetchProfile(session.user.id, session.user.email || '');
+        setView(AppView.DASHBOARD);
+      } else {
+        setUser(null);
+        setView(AppView.LOGIN);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const fetchProfile = async (userId: string, email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (data) {
+        setUser({
+          id: userId,
+          name: data.full_name || 'Professor',
+          email: email,
+          credits: data.credits || 0
+        });
+        setView(AppView.DASHBOARD);
+      } else {
+        // Criar perfil se não existir
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: userId, full_name: 'Professor', credits: 100 }])
+          .select()
+          .single();
+        
+        if (newProfile) {
+          setUser({
+            id: userId,
+            name: newProfile.full_name,
+            email: email,
+            credits: newProfile.credits
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Erro ao carregar perfil:", e);
+    }
+  };
 
   const handleLogin = (userData: User) => {
     setUser(userData);
@@ -34,7 +103,12 @@ const App: React.FC = () => {
     setView(AppView.DASHBOARD);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error(e);
+    }
     setUser(null);
     setView(AppView.LOGIN);
   };
@@ -42,6 +116,17 @@ const App: React.FC = () => {
   const toggleSidebar = () => {
     setIsSidebarVisible(!isSidebarVisible);
   };
+
+  if (loading) {
+    return (
+      <div className="h-screen w-screen bg-[#0f1115] flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-white/10 border-t-white rounded-full animate-spin mb-4"></div>
+          <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Iniciando Workspace</span>
+        </div>
+      </div>
+    );
+  }
 
   if (view === AppView.LOGIN) {
     return <Login onLogin={handleLogin} isDarkMode={isDarkMode} />;
@@ -72,7 +157,7 @@ const App: React.FC = () => {
             <Dashboard onSelectTool={handleSelectTool} />
           )}
           {view === AppView.TOOL_VIEW && selectedToolId && (
-            <ToolPage toolId={selectedToolId} onBack={handleGoHome} />
+            <ToolPage toolId={selectedToolId} onBack={handleGoHome} user={user} />
           )}
         </main>
       </div>
