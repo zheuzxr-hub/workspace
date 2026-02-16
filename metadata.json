@@ -1,0 +1,8 @@
+{
+  "name": "WS Workspace - IA para Professores",
+  "description": "Uma plataforma elegante e produtiva para professores criarem materiais didáticos baseados na BNCC usando Inteligência Artificial.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
