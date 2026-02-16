@@ -238,26 +238,73 @@ const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
     } catch (error) { alert("Erro ao exportar para PowerPoint."); } finally { setLoading(false); }
   };
 
+  const handleDownloadJPEG = async () => {
+    if (!resultRef.current) return;
+    setLoading(true);
+    try {
+      // Ajustamos a escala para garantir que o JPEG não fique distorcido ao imprimir em A4
+      const dataUrl = await htmlToImage.toJpeg(resultRef.current, { 
+        backgroundColor: '#ffffff', 
+        quality: 0.95,
+        pixelRatio: 2
+      });
+      const link = document.createElement('a');
+      link.download = `ws-questionario-${Date.now()}.jpg`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      alert("Erro ao exportar para JPEG.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDownloadPDF = async () => {
     if (!resultRef.current) return;
     setLoading(true);
-    const pdf = new jsPDF('p', 'mm', 'a4'); 
     try {
       if (toolId === 'slides-ia' && slides.length > 0) {
+        const pdf = new jsPDF('l', 'mm', 'a4');
         const slideElements = document.querySelectorAll('.slide-card');
         for (let i = 0; i < slideElements.length; i++) {
           if (i > 0) pdf.addPage('a4', 'l');
-          const canvas = await htmlToImage.toCanvas(slideElements[i] as HTMLElement, { backgroundColor: '#ffffff' });
-          const imgData = canvas.toDataURL('image/png');
-          pdf.addImage(imgData, 'PNG', 0, 0, 297, 210);
+          const canvas = await htmlToImage.toCanvas(slideElements[i] as HTMLElement, { backgroundColor: '#ffffff', pixelRatio: 2 });
+          const imgData = canvas.toDataURL('image/jpeg', 1.0);
+          pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
         }
+        pdf.save(`ws-slides-${Date.now()}.pdf`);
       } else {
-        const canvas = await htmlToImage.toCanvas(resultRef.current, { backgroundColor: '#ffffff' });
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+        // Lógica de Paginação para Questionários e Planos de Aula (Evita texto espremido)
+        const canvas = await htmlToImage.toCanvas(resultRef.current, { backgroundColor: '#ffffff', pixelRatio: 2 });
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgHeightInPdf = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        let heightLeft = imgHeightInPdf;
+        let position = 0;
+
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightInPdf);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeightInPdf;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightInPdf);
+          heightLeft -= pdfHeight;
+        }
+        
+        pdf.save(`ws-documento-${Date.now()}.pdf`);
       }
-      pdf.save(`ws-workspace-${toolId}-${Date.now()}.pdf`);
-    } catch (error) { window.print(); } finally { setLoading(false); }
+    } catch (error) { 
+      console.error(error);
+      window.print(); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const renderQuestionnaireForm = () => (
@@ -586,7 +633,7 @@ const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 no-print relative z-10">
           <div className="flex items-center space-x-6">
             <div className="w-16 h-16 rounded-xl bg-brand-500 flex items-center justify-center shadow-lg shadow-brand-500/10">
-              <i className={`fas ${toolId === 'questoes-ia' ? 'fa-brain' : (toolId === 'slides-ia' ? 'fa-file-powerpoint' : 'fa-calendar-check')} text-white text-3xl`}></i>
+              <i className={`fas ${toolId === 'questoes-ia' ? 'fa-brain' : (toolId === 'slides-ia' ? 'fa-file-powerpoint' : 'fa-calendar-check')} text-blue-100 text-3xl`}></i>
             </div>
             <div>
               <h2 className="text-3xl font-black text-black tracking-tight leading-none mb-2">
@@ -612,7 +659,12 @@ const ToolPage: React.FC<ToolPageProps> = ({ toolId, onBack }) => {
                         <span className="text-[10px] font-black uppercase tracking-widest">PowerPoint</span>
                      </button>
                    )}
-                   <button onClick={handleDownloadPDF} className="p-3 rounded-xl bg-white text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-all border border-gray-200 shadow-sm">
+                   {toolId === 'questoes-ia' && (
+                     <button onClick={handleDownloadJPEG} className="p-3 rounded-xl bg-white text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-all border border-gray-200 shadow-sm" title="Baixar JPEG">
+                        <i className="fas fa-image"></i>
+                     </button>
+                   )}
+                   <button onClick={handleDownloadPDF} className="p-3 rounded-xl bg-white text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-all border border-gray-200 shadow-sm" title="Baixar PDF">
                       <i className="fas fa-file-pdf"></i>
                    </button>
                 </div>

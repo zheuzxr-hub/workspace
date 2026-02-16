@@ -53,7 +53,7 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool, onClick }) => {
     >
       <div className="mb-4">
         <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center">
-          <i className={`fas ${tool.icon} text-brand-600 text-lg`}></i>
+          <i className={`fas ${tool.icon} text-blue-300 text-lg`}></i>
         </div>
       </div>
       <h3 className="text-base font-bold text-black mb-2 google-font">{tool.title}</h3>
