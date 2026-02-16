@@ -5,13 +5,14 @@ import { Tool } from '../types';
 
 interface DashboardProps {
   onSelectTool: (id: string) => void;
+  userEmail?: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onSelectTool, userEmail }) => {
   return (
-    <div className="max-w-[1200px] mx-auto py-10 px-6 animate-in fade-in duration-500">
-      {/* Row 1 */}
-      <section className="mb-16">
+    <div className="max-w-[1200px] mx-auto py-10 px-6 animate-in fade-in duration-500 space-y-20">
+      {/* Row 1: Ferramentas */}
+      <section>
         <h1 className="text-3xl font-bold text-black mb-8 google-font">Potencialize sua sala de aula com IA</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {TOOLS.slice(0, 4).map((tool) => (
@@ -20,12 +21,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
         </div>
       </section>
 
-      {/* Row 2 */}
+      {/* Row 2: Galeria */}
       <section>
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-black google-font">Descubra e recrie ideias de apps</h2>
+          <h2 className="text-3xl font-bold text-black google-font">Descubra e recrie ideias de materiais</h2>
           <button className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-black hover:bg-gray-50 transition-colors shadow-sm">
-            <span>Explorar galeria de apps</span>
+            <span>Explorar galeria</span>
             <i className="fas fa-arrow-right text-xs"></i>
           </button>
         </div>
@@ -34,7 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
             <ToolCard key={`remix-${tool.id}`} tool={tool} onClick={() => onSelectTool(tool.id)} />
           ))}
         </div>
-        <p className="text-xs text-gray-400 mt-8 text-center italic font-medium">explore variações e exporte o código.</p>
+        <p className="text-xs text-gray-400 mt-8 text-center italic font-medium">explore variações e exporte o código para uso offline.</p>
       </section>
     </div>
   );
@@ -63,7 +64,6 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool, onClick }) => {
          <i className="fas fa-external-link-alt text-[10px] text-gray-400"></i>
       </div>
       
-      {/* Decorative gradient flare for elegance */}
       <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors"></div>
     </button>
   );

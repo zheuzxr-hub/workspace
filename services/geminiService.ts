@@ -56,9 +56,9 @@ export const generateQuestions = async (params: QuestionParams) => {
     `
   };
 
-  const contents: any[] = [textPart];
+  const parts: any[] = [textPart];
   if (params.fileData) {
-    contents.unshift({
+    parts.unshift({
       inlineData: {
         data: params.fileData.data,
         mimeType: params.fileData.mimeType
@@ -69,7 +69,7 @@ export const generateQuestions = async (params: QuestionParams) => {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: { parts: contents },
+      contents: { parts: parts },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         tools: params.webSearch ? [{ googleSearch: {} }] : undefined,
@@ -114,13 +114,13 @@ export const generateSlidesOutline = async (params: SlideParams) => {
       ${params.fileData ? 'Utilize o conteúdo do arquivo anexo como base de informação principal para os slides.' : ''}
 
       IMPORTANTE: Formate cada slide separado por "--- SLIDE [NÚMERO] ---".
-      Cada slide deve ter um "TÍTULO: [Texto]" e "CONTEÚDO: [Tópicos detalhados]".
+      Cada slide deve tel um "TÍTULO: [Texto]" e "CONTEÚDO: [Tópicos detalhados]".
     `
   };
 
-  const contents: any[] = [textPart];
+  const parts: any[] = [textPart];
   if (params.fileData) {
-    contents.unshift({
+    parts.unshift({
       inlineData: {
         data: params.fileData.data,
         mimeType: params.fileData.mimeType
@@ -131,7 +131,7 @@ export const generateSlidesOutline = async (params: SlideParams) => {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: { parts: contents },
+      contents: { parts: parts },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         tools: params.webSearch ? [{ googleSearch: {} }] : undefined,
@@ -196,7 +196,7 @@ export const generateThematicImage = async (subject: string, discipline: string)
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: { parts: [{ text: prompt }] },
       config: {
         imageConfig: {
           aspectRatio: "16:9"

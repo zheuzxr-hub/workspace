@@ -2,7 +2,8 @@
 export enum AppView {
   LOGIN = 'LOGIN',
   DASHBOARD = 'DASHBOARD',
-  TOOL_VIEW = 'TOOL_VIEW'
+  TOOL_VIEW = 'TOOL_VIEW',
+  PLANS = 'PLANS'
 }
 
 export interface User {
@@ -18,6 +19,16 @@ export interface Tool {
   description: string;
   icon: string;
   category: string;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  price: string;
+  period: string;
+  features: string[];
+  stripePriceId: string;
+  highlight?: boolean;
 }
 
 export interface QuestionParams {
@@ -63,4 +74,20 @@ export interface LessonPlanParams {
   days: string[];
   bnccSkills: string[];
   additionalDetails?: string;
+}
+
+// Fix: Augment both global JSX and React namespaces to ensure custom elements like stripe-buy-button are recognized
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'stripe-buy-button': any;
+    }
+  }
+  namespace React {
+    namespace JSX {
+      interface IntrinsicElements {
+        'stripe-buy-button': any;
+      }
+    }
+  }
 }
