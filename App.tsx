@@ -11,7 +11,7 @@ import { supabase, isConfigured } from './services/supabaseClient';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -19,37 +19,28 @@ const App: React.FC = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
-    // Lógica para detectar se o usuário voltou de um pagamento bem-sucedido no Stripe
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
       setShowSuccessToast(true);
-      // Limpa os parâmetros da URL para evitar que a mensagem reapareça no refresh
       window.history.replaceState({}, document.title, window.location.pathname);
-      // Esconde o aviso após 8 segundos
       setTimeout(() => setShowSuccessToast(false), 8000);
     }
 
-    const checkUser = async () => {
+    const initAuth = async () => {
       if (!isConfigured) {
         setLoading(false);
         return;
       }
 
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
-        if (session) {
-          await fetchProfile(session.user.id, session.user.email || '');
-        }
-      } catch (e) {
-        console.warn("Supabase connection skipped or failed:", e);
-      } finally {
-        setLoading(false);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await fetchProfile(session.user.id, session.user.email || '');
+        setView(AppView.DASHBOARD);
       }
+      setLoading(false);
     };
 
-    checkUser();
+    initAuth();
 
     if (isConfigured) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -77,14 +68,12 @@ const App: React.FC = () => {
       if (data) {
         setUser({
           id: userId,
-          name: data.full_name || 'Professor',
+          name: data.full_name || email.split('@')[0],
           email: email,
-          credits: data.credits || 0
+          credits: data.credits ?? 100
         });
       }
-    } catch (e) {
-      console.error("Error loading profile:", e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleLogin = (userData: User) => {
@@ -108,28 +97,15 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    if (isConfigured) {
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    if (isConfigured) await supabase.auth.signOut();
     setUser(null);
     setView(AppView.LOGIN);
-  };
-
-  const toggleSidebar = () => {
-    setIsSidebarVisible(!isSidebarVisible);
   };
 
   if (loading) {
     return (
       <div className="h-screen w-screen bg-[#0f1115] flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-white/10 border-t-white rounded-full animate-spin mb-4"></div>
-          <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Iniciando Workspace</span>
-        </div>
+        <div className="w-12 h-12 border-4 border-white/10 border-t-white rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -139,48 +115,30 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="h-screen w-screen flex text-black overflow-hidden bg-transparent">
-      {/* Notificação de Sucesso de Pagamento */}
+    <div className="h-screen w-screen flex text-white overflow-hidden bg-[#0f1115]">
       {showSuccessToast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center space-x-4 animate-in slide-in-from-top-4 duration-500 border border-green-400">
-          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-            <i className="fas fa-check text-sm"></i>
-          </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest leading-none mb-1">Pagamento Aprovado!</p>
-            <p className="text-[10px] opacity-90 font-bold">Seus recursos premium já estão liberados.</p>
-          </div>
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl animate-in slide-in-from-top-4">
+          <p className="text-xs font-black uppercase tracking-widest">Pagamento Aprovado!</p>
         </div>
       )}
 
-      <div className={`${isSidebarVisible ? 'w-[240px]' : 'w-0'} transition-all duration-300 overflow-hidden shrink-0 border-r border-gray-200 bg-white/50 backdrop-blur-md`}>
-        <Sidebar 
-          currentView={view} 
-          user={user}
-          onNavigate={handleNavigate} 
-          onLogout={handleLogout} 
-        />
+      <div className={`${isSidebarVisible ? 'w-[240px]' : 'w-0'} transition-all duration-300 overflow-hidden shrink-0 border-r border-white/5 bg-[#0f1115]`}>
+        <Sidebar currentView={view} user={user} onNavigate={handleNavigate} onLogout={handleLogout} />
       </div>
       
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-[#0f1115]">
         <Header 
           user={user} 
           isDarkMode={isDarkMode} 
           onToggleTheme={() => setIsDarkMode(!isDarkMode)} 
-          onGoHome={toggleSidebar} 
+          onGoHome={() => setIsSidebarVisible(!isSidebarVisible)} 
           onLogout={handleLogout}
         />
         
         <main className="flex-1 overflow-y-auto custom-scrollbar">
-          {view === AppView.DASHBOARD && (
-            <Dashboard onSelectTool={handleSelectTool} userEmail={user?.email} />
-          )}
-          {view === AppView.PLANS && (
-            <Plans userEmail={user?.email} />
-          )}
-          {view === AppView.TOOL_VIEW && selectedToolId && (
-            <ToolPage toolId={selectedToolId} onBack={handleGoHome} user={user} />
-          )}
+          {view === AppView.DASHBOARD && <Dashboard onSelectTool={handleSelectTool} userEmail={user?.email} />}
+          {view === AppView.PLANS && <Plans userEmail={user?.email} onClose={() => setView(AppView.DASHBOARD)} />}
+          {view === AppView.TOOL_VIEW && selectedToolId && <ToolPage toolId={selectedToolId} onBack={handleGoHome} user={user} />}
         </main>
       </div>
     </div>

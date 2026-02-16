@@ -10,80 +10,78 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, user, onNavigate, onLogout }) => {
-  const menuItems = [
-    { icon: 'fa-rocket', label: 'Início', active: currentView === AppView.DASHBOARD, view: AppView.DASHBOARD },
-    { icon: 'fa-images', label: 'Galeria', active: false, view: AppView.DASHBOARD },
-    { icon: 'fa-th-large', label: 'Seus apps', active: false, view: AppView.DASHBOARD },
-    { icon: 'fa-question-circle', label: 'Dúvidas (FAQ)', active: false, view: AppView.DASHBOARD },
-  ];
-
   return (
-    <aside className="w-[240px] flex flex-col bg-white border-r border-gray-200 h-screen transition-colors">
-      <div className="p-4 flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <span className="text-black font-bold text-lg google-font">WorkSpace AI</span>
-          <i className="fas fa-chevron-down text-xs text-gray-400"></i>
-        </div>
-        <button className="text-gray-400 hover:text-black">
-          <i className="fas fa-bars"></i>
+    <aside className="w-[260px] flex flex-col bg-[#131314] h-screen text-[#e3e3e3] border-r border-[#3c4043]/30 shrink-0 overflow-hidden">
+      <div className="p-4 mb-4">
+        <button className="w-full flex items-center justify-between px-3 py-2 hover:bg-[#2d2f31] rounded-lg transition-colors group">
+          <div className="flex items-center space-x-3">
+             <div className="w-6 h-6 bg-[#8ab4f8] rounded-md flex items-center justify-center text-[#131314] text-[10px] font-black">WS</div>
+             <span className="font-normal text-[15px] text-[#e3e3e3]">WS Workspace</span>
+          </div>
+          <i className="fas fa-chevron-down text-[10px] text-[#9aa0a6] group-hover:text-white"></i>
         </button>
       </div>
 
-      <nav className="flex-1 px-2 space-y-1">
-        {menuItems.map((item, idx) => (
+      <div className="px-3 mb-2 flex-1 overflow-y-auto custom-scrollbar">
+        <nav className="space-y-0.5">
           <button
-            key={idx}
-            onClick={() => onNavigate(item.view)}
-            className={`w-full flex items-center space-x-4 px-4 py-2 rounded-r-full text-sm font-semibold transition-all ${
-              item.active 
-                ? 'bg-brand-50 text-brand-600' 
-                : 'text-gray-600 hover:bg-gray-50 hover:text-black'
+            onClick={() => onNavigate(AppView.DASHBOARD)}
+            className={`w-full flex items-center px-4 py-2.5 rounded-full text-[14px] transition-all font-medium ${
+              currentView === AppView.DASHBOARD 
+                ? 'bg-[#1a73e81a] text-[#8ab4f8]' 
+                : 'text-[#e3e3e3] hover:bg-[#2d2f31]'
             }`}
           >
-            <div className="w-5 flex justify-center">
-              <i className={`fas ${item.icon}`}></i>
-            </div>
-            <span>{item.label}</span>
+            <i className="fas fa-house-chimney mr-4 text-[14px]"></i>
+            Início
           </button>
-        ))}
-      </nav>
+          
+          <button className="w-full flex items-center px-4 py-2.5 rounded-full text-[14px] text-[#e3e3e3] hover:bg-[#2d2f31] font-medium">
+            <i className="fas fa-compass mr-4 text-[14px]"></i>
+            Galeria
+          </button>
+          
+          <button className="w-full flex items-center px-4 py-2.5 rounded-full text-[14px] text-[#e3e3e3] hover:bg-[#2d2f31] font-medium">
+            <i className="fas fa-clock-rotate-left mr-4 text-[14px]"></i>
+            Seus projetos
+          </button>
+          
+          <div className="h-[1px] bg-[#3c4043]/50 my-4 mx-4"></div>
+          
+          <button className="w-full flex items-center px-4 py-2.5 rounded-full text-[14px] text-[#e3e3e3] hover:bg-[#2d2f31] font-medium">
+            <i className="fas fa-circle-question mr-4 text-[14px]"></i>
+            FAQ
+          </button>
+        </nav>
+      </div>
 
-      <div className="p-4 space-y-4">
-        <div className="flex items-center space-x-3 px-4 py-1">
-          <div className="w-7 h-7 rounded-full bg-brand-600 flex items-center justify-center text-[10px] text-white font-bold">
-            {user?.name.charAt(0)}
-          </div>
-          <span className="text-xs text-black font-semibold truncate flex-1">{user?.email}</span>
-        </div>
-
-        <button className="flex items-center space-x-4 px-4 py-2 text-sm text-gray-600 hover:text-black w-full transition-colors font-medium">
-          <div className="w-5 flex justify-center">
-             <i className="fas fa-cog"></i>
-          </div>
+      <div className="p-4 space-y-1 mt-auto border-t border-[#3c4043]/30">
+        <button className="w-full flex items-center space-x-4 px-4 py-2 text-[13px] text-[#e3e3e3] hover:bg-[#2d2f31] rounded-full transition-all">
+          <i className="fas fa-gear text-[#9aa0a6]"></i>
           <span>Configurações</span>
         </button>
-
-        <button 
-          onClick={onLogout}
-          className="flex items-center space-x-4 px-4 py-2 text-sm text-gray-600 hover:text-red-600 w-full transition-colors font-medium"
-        >
-          <div className="w-5 flex justify-center">
-             <i className="fas fa-sign-out-alt"></i>
+        
+        <div className="flex items-center justify-between px-4 py-3 mt-2">
+          <div className="flex items-center space-x-3 truncate">
+            <img 
+              src={`https://ui-avatars.com/api/?name=${user?.name || 'Professor'}&background=8ab4f8&color=131314&bold=true`} 
+              className="w-6 h-6 rounded-full border border-white/10" 
+              alt="Avatar" 
+            />
+            <span className="truncate text-[12px] text-[#9aa0a6]">{user?.email || 'usuario@email.com'}</span>
           </div>
-          <span>Sair</span>
-        </button>
+        </div>
 
-        <div className="px-4 pb-2 flex flex-col space-y-2">
+        <div className="px-2 pb-2">
           <button 
             onClick={() => onNavigate(AppView.PLANS)}
-            className={`w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-              currentView === AppView.PLANS 
-                ? 'bg-brand-500 text-white border-brand-500 shadow-lg shadow-brand-500/20' 
-                : 'bg-white border-gray-200 text-gray-500 hover:border-brand-500 hover:text-brand-600'
-            }`}
+            className="w-full flex items-center justify-between bg-[#f9ab0026] text-[#f9ab00] px-4 py-2 rounded-full text-[12px] font-bold hover:bg-[#f9ab003d] transition-all border border-[#f9ab0022]"
           >
-            <i className="fas fa-credit-card"></i>
-            <span>Planos</span>
+            <div className="flex items-center space-x-3">
+              <i className="fas fa-bolt-lightning text-[12px]"></i>
+              <span>{user?.credits || 0} créditos</span>
+            </div>
+            <i className="fas fa-plus text-[9px] opacity-60"></i>
           </button>
         </div>
       </div>

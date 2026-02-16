@@ -1,9 +1,10 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://placeholder-project.supabase.co';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'placeholder-anon-key';
+// Credenciais fornecidas para integração
+const supabaseUrl = 'https://exlymmwemvhudgkbzwwv.supabase.co';
+const supabaseAnonKey = 'sb_publishable_w56stOOmKTiEmXwm6SOHmA_IHncL-uA';
 
-export const isConfigured = !supabaseUrl.includes('placeholder') && !supabaseAnonKey.includes('placeholder');
+export const isConfigured = true;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
