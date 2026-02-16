@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { User } from '../types';
-import { supabase } from '../services/supabaseClient';
+import { supabase, isConfigured } from '../services/supabaseClient';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -20,15 +20,27 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode }) => {
     setLoading(true);
     setErrorMsg(null);
 
+    // If not configured, simulate a successful login to avoid "Failed to fetch"
+    if (!isConfigured) {
+      setTimeout(() => {
+        onLogin({
+          id: 'guest-user',
+          name: 'Professor Convidado',
+          email: email || 'convidado@workspace.ai',
+          credits: 100
+        });
+        setLoading(false);
+      }, 800);
+      return;
+    }
+
     try {
-      // Tentativa de Login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        // Se falhar e for erro de credenciais inválidas, tentamos o SignUp (Fluxo simplificado para este app)
         if (error.message.includes('Invalid login credentials')) {
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email,
@@ -66,6 +78,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode }) => {
           <span className="text-xl font-black tracking-tighter">ws</span>
         </div>
         <div className="flex items-center space-x-6">
+          {!isConfigured && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 px-3 py-1 rounded-full flex items-center space-x-2">
+              <i className="fas fa-exclamation-triangle text-yellow-500 text-[8px]"></i>
+              <span className="text-[8px] font-black uppercase tracking-tighter text-yellow-500/80">Modo de Demonstração (Sem Supabase)</span>
+            </div>
+          )}
           <button className="flex items-center space-x-3 border border-white/10 bg-white/5 px-4 py-1.5 rounded-full text-[9px] font-black hover:bg-white/10 transition-all uppercase tracking-widest text-white shadow-sm">
             <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
             <span>WS TV</span>
@@ -163,7 +181,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode }) => {
                 className="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-white/90 transition-all shadow-lg text-xs uppercase tracking-[0.2em] mt-4 flex items-center justify-center space-x-3 disabled:opacity-50"
               >
                 {loading && <i className="fas fa-spinner fa-spin"></i>}
-                <span>{loading ? 'Acessando...' : 'Entrar / Criar conta'}</span>
+                <span>{loading ? 'Acessando...' : isConfigured ? 'Entrar / Criar conta' : 'Acessar modo de teste'}</span>
               </button>
             </form>
 

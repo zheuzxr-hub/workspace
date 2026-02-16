@@ -6,7 +6,7 @@ import Dashboard from './pages/Dashboard';
 import ToolPage from './pages/ToolPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import { supabase } from './services/supabaseClient';
+import { supabase, isConfigured } from './services/supabaseClient';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
@@ -17,8 +17,12 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar sessão ativa ao carregar
     const checkUser = async () => {
+      if (!isConfigured) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
@@ -27,8 +31,7 @@ const App: React.FC = () => {
           await fetchProfile(session.user.id, session.user.email || '');
         }
       } catch (e) {
-        console.warn("Supabase não configurado ou erro de conexão:", e);
-        // Não jogamos erro para não travar o carregamento do App
+        console.warn("Supabase connection skipped or failed:", e);
       } finally {
         setLoading(false);
       }
@@ -36,21 +39,22 @@ const App: React.FC = () => {
 
     checkUser();
 
-    // Escutar mudanças na auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        await fetchProfile(session.user.id, session.user.email || '');
-        setView(AppView.DASHBOARD);
-      } else {
-        setUser(null);
-        setView(AppView.LOGIN);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    if (isConfigured) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session) {
+          await fetchProfile(session.user.id, session.user.email || '');
+          setView(AppView.DASHBOARD);
+        } else {
+          setUser(null);
+          setView(AppView.LOGIN);
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   const fetchProfile = async (userId: string, email: string) => {
+    if (!isConfigured) return;
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -67,8 +71,7 @@ const App: React.FC = () => {
         });
         setView(AppView.DASHBOARD);
       } else {
-        // Criar perfil se não existir
-        const { data: newProfile, error: insertError } = await supabase
+        const { data: newProfile } = await supabase
           .from('profiles')
           .insert([{ id: userId, full_name: 'Professor', credits: 100 }])
           .select()
@@ -84,7 +87,7 @@ const App: React.FC = () => {
         }
       }
     } catch (e) {
-      console.error("Erro ao carregar perfil:", e);
+      console.error("Error loading profile:", e);
     }
   };
 
@@ -104,10 +107,12 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.error(e);
+    if (isConfigured) {
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.error(e);
+      }
     }
     setUser(null);
     setView(AppView.LOGIN);
