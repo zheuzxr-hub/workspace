@@ -20,7 +20,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode }) => {
     setLoading(true);
     setErrorMsg(null);
 
-    // If not configured, simulate a successful login to avoid "Failed to fetch"
     if (!isConfigured) {
       setTimeout(() => {
         onLogin({
@@ -57,11 +56,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode }) => {
       }
     } catch (err: any) {
       console.error("Login Error:", err);
-      if (err.message === 'Failed to fetch') {
-        setErrorMsg('Erro de conexão: Verifique a configuração do Supabase.');
-      } else {
-        setErrorMsg(err.message || 'Erro ao autenticar');
-      }
+      setErrorMsg(err.message || 'Erro ao autenticar');
     } finally {
       setLoading(false);
     }
@@ -78,12 +73,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode }) => {
           <span className="text-xl font-black tracking-tighter">ws</span>
         </div>
         <div className="flex items-center space-x-6">
-          {!isConfigured && (
-            <div className="bg-yellow-500/10 border border-yellow-500/20 px-3 py-1 rounded-full flex items-center space-x-2">
-              <i className="fas fa-exclamation-triangle text-yellow-500 text-[8px]"></i>
-              <span className="text-[8px] font-black uppercase tracking-tighter text-yellow-500/80">Modo de Demonstração (Sem Supabase)</span>
-            </div>
-          )}
           <button className="flex items-center space-x-3 border border-white/10 bg-white/5 px-4 py-1.5 rounded-full text-[9px] font-black hover:bg-white/10 transition-all uppercase tracking-widest text-white shadow-sm">
             <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
             <span>WS TV</span>
@@ -126,51 +115,42 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode }) => {
         </div>
       </main>
 
-      {/* Modal */}
+      {/* Modal sem janela visual - apenas os elementos flutuando */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => !loading && setIsModalOpen(false)}></div>
+          {/* Overlay leve para manter o foco no formulário */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity" onClick={() => !loading && setIsModalOpen(false)}></div>
           
-          <div className="relative w-full max-w-sm bg-[#1a1d23] border border-white/5 rounded-3xl p-10 shadow-2xl animate-in zoom-in-95 fade-in duration-300">
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 text-white/20 hover:text-white transition-colors">
-              <i className="fas fa-times"></i>
-            </button>
-
-            <div className="mb-10 text-center">
-               <div className="inline-flex items-center justify-center w-12 h-12 bg-white text-black rounded-xl font-black text-xl mb-6">ws</div>
-               <h3 className="text-2xl font-black tracking-tight text-white">Bem-vindo</h3>
-               <p className="text-xs text-white/40 mt-1 font-medium tracking-wide">Entre com seu e-mail de docente</p>
-            </div>
-
+          <div className="relative w-full max-w-[400px] animate-in slide-in-from-bottom-8 fade-in duration-500">
             {errorMsg && (
-              <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] font-bold uppercase tracking-wider text-center">
+              <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-[10px] font-bold uppercase tracking-wider text-center">
                 {errorMsg}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">E-mail corporativo</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block ml-1">E-mail Corporativo</label>
                 <input 
                   required
                   disabled={loading}
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-white/30 transition-all text-sm font-bold text-white disabled:opacity-50"
+                  className="w-full bg-[#1e2329]/80 border border-white/5 rounded-lg px-5 py-4 outline-none focus:border-white/20 transition-all text-sm font-bold text-white disabled:opacity-50"
                   placeholder="nome@escola.com"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Senha</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block ml-1">Senha</label>
                 <input 
                   required
                   disabled={loading}
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-white/30 transition-all text-sm font-bold text-white disabled:opacity-50"
+                  className="w-full bg-[#1e2329]/80 border border-white/5 rounded-lg px-5 py-4 outline-none focus:border-white/20 transition-all text-sm font-bold text-white disabled:opacity-50"
                   placeholder="••••••••"
                 />
               </div>
@@ -178,18 +158,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, isDarkMode }) => {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-white/90 transition-all shadow-lg text-xs uppercase tracking-[0.2em] mt-4 flex items-center justify-center space-x-3 disabled:opacity-50"
+                className="w-full bg-white text-black font-black py-4 rounded-xl hover:bg-gray-100 transition-all shadow-xl text-xs uppercase tracking-[0.2em] mt-4 flex items-center justify-center space-x-3 disabled:opacity-50"
               >
                 {loading && <i className="fas fa-spinner fa-spin"></i>}
-                <span>{loading ? 'Acessando...' : isConfigured ? 'Entrar / Criar conta' : 'Acessar modo de teste'}</span>
+                <span>{loading ? 'ACESSANDO...' : 'ACESSAR MODO DE TESTE'}</span>
               </button>
             </form>
-
-            <div className="mt-10 text-center">
-              <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">
-                Precisa de ajuda? <button className="text-white/40 hover:text-white">Suporte</button>
-              </p>
-            </div>
+            
+            <button 
+              onClick={() => setIsModalOpen(false)} 
+              className="mt-8 w-full text-[10px] font-black uppercase tracking-[0.3em] text-white/20 hover:text-white/60 transition-colors"
+            >
+              Cancelar
+            </button>
           </div>
         </div>
       )}
